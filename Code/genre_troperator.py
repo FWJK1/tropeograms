@@ -1,5 +1,6 @@
 ## standard python libraries
 from concurrent.futures import ThreadPoolExecutor
+import pickle
 
 ## third party libraries
 import pandas as pd
@@ -15,18 +16,27 @@ from Utility.genre_trope_matrix import build_prop_trope_matrix, build_tf_idf_mat
 root = tb.find_repo_root()
 
 class GenreTroperator:
-    def __init__(self, matrix="prop", movie_path=f"{root}/Data/trope_time_series/alien_tropes.csv", title="Alien"):
-        if matrix == 'prop':
-            self.matrix  = build_prop_trope_matrix()
-        elif matrix == 'tf_idf':
-            self.matrix = build_tf_idf_matrix()
+    def __init__(self, matrix="prop", movie_path=f"{root}/Data/trope_time_series/alien_tropes.csv", title="Alien", reload=False, taus=[1, 60, 120, 600, 1200]):
+        self.matrix = build_prop_trope_matrix()
+        # if matrix == 'prop':
+        #     self.matrix  = build_prop_trope_matrix()
+        # elif matrix == 'tf_idf':
+        #     self.matrix = build_tf_idf_matrix()
         self.genres = tb.get_genres()
         self.movie_tropes = self.load_movie_data(movie_path)
-        self.snapshots = self.build_snapshots()
         self.title = title
+        if reload:
+            self.build_snapshots()
+            self.save_snapshots()
+        else:
+            try:
+                self.load_snapshots()
+            except:
+                self.snapshots = self.build_snapshots()
+                self.save_snapshots()
+                
         self.top_5 = self.sort_snapshots()
         
-
     def load_movie_data(self, path=f"{root}/Data/trope_time_series/alien_tropes.csv", matrix=None):
         """
         Load and format the time-series data from a csv
@@ -46,8 +56,22 @@ class GenreTroperator:
 
         return df
 
+    def save_snapshots(self):
+        with open(f'{root}/Data/snapshots/{self.title}.pkl', 'wb') as f:
+                pickle.dump(self.snapshots, f)
+
+    def load_snapshots(self, taus=[1, 60, 120, 600, 1200]):
+        with open(f'{root}/Data/snapshots/{self.title}.pkl', 'rb') as f:
+            self.snapshots = pickle.load(f)
+        # print(self.snapshots)
+        taus = [tau for tau in taus if tau not in self.snapshots]
+        if len(taus):
+            self.snapshots |= self.build_snapshots(taus)
+
+            self.save_snapshots()
+        
     @tb.log_time
-    def build_snapshots(self, taus= [1, 60, 120, 600, 1200] ):
+    def build_snapshots(self, taus=[1, 60, 120, 600, 1200] ):
             self.new_tropes_dict = self.movie_tropes.groupby('Start Time')['Trope'].apply(list).to_dict()
             with ThreadPoolExecutor(max_workers=8) as executor:
                  results = list(executor.map(self.get_snapshot, taus))
@@ -94,18 +118,18 @@ class GenreTroperator:
           # Create the snapshot dataframe and add the 'total' column
         snapshots_df = pd.DataFrame(snapshots, columns= ['second'] + self.genres + ['active_tropes', 'new_tropes'])
         snapshots_df['total'] = snapshots_df[self.genres].sum(axis=1)
-        print(snapshots_df)
-        print(snapshots_df[self.genres].describe().T)
+        # print(snapshots_df)
+        # print(snapshots_df[self.genres].describe().T)
         return snapshots_df
 
-    def get_max_y_range(self):
+    def get_max_y_range(self,):
         values = [snapshot[genre] for snapshot in self.snapshots.values() for genre in self.genres] ## this is a list of pandas series
         return (min(v.min() for v in values), max(v.max() for v in values))
     
-    def get_dynamic_y_range(self):
+    def get_dynamic_y_range(self, taus):
         return max(
             (snapshot[self.genres].max() - snapshot[self.genres].min()).max()
-            for snapshot in self.snapshots.values()
+            for tau, snapshot in self.snapshots.items() if tau in taus
         )
 
     def sort_snapshots(self):
