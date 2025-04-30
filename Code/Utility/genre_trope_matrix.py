@@ -6,16 +6,16 @@ root = find_repo_root()
 
 
 def get_genres():
-    df = pd.read_csv(f"{root}/Data/liteweight/2020_genre_counts_by_trope.csv")
+    df = pd.read_csv(f"{root}/Data/general/2020_genre_counts_by_trope.csv")
     genres = df.columns[2:29].tolist()
     genres = genres[0:-1]
     print(genres)
-    with open(f"{root}/Data/liteweight/genre_list.txt", "w") as f:
+    with open(f"{root}/Data/general/genre_list.txt", "w") as f:
         f.write("\n".join(genres))
 
 
 def build_tf_idf_matrix():
-    df = pd.read_csv(f"{root}/Data/liteweight/2020_genre_counts_by_trope.csv")
+    df = pd.read_csv(f"{root}/Data/general/2020_genre_counts_by_trope.csv")
     genres = df.columns[2:29].tolist()
 
     ## calculate IDF
@@ -30,7 +30,7 @@ def build_tf_idf_matrix():
     df[genres] = df[genres].multiply(df['idf'], axis=0)
     df.drop(columns=['idf'], inplace=True)
     df.reset_index(drop=True, inplace=True)
-    df.to_csv(f"{root}/Data/liteweight/genre_trope_tfidf_matrix.csv", index=False)
+    df.to_csv(f"{root}/Data/general/genre_trope_tfidf_matrix.csv", index=False)
     df['Trope'] = df['Trope'].str.strip()
     df = df[['Trope'] + genres]
     df.dropna(how='all', inplace=True)
@@ -38,7 +38,7 @@ def build_tf_idf_matrix():
 
 
 def build_prop_trope_matrix(norm='num_movies'):
-    df = pd.read_csv(f"{root}/Data/liteweight/2020_genre_counts_by_trope.csv")
+    df = pd.read_csv(f"{root}/Data/general/2020_genre_counts_by_trope.csv")
     genres = df.columns[2:29].tolist()
     all_tropes = df.iloc[:, 1].tolist()
 
@@ -68,7 +68,7 @@ def build_prop_trope_matrix(norm='num_movies'):
     df_matrix = pd.DataFrame(np.array(matrix_maker).T, columns=all_tropes, index=genres)
     df_matrix = df_matrix.transpose()
     df_matrix.reset_index(names='Trope', inplace=True)
-    df_matrix.to_csv(f"{root}/Data/liteweight/genre_trope_matrix.csv", index=False)
+    df_matrix.to_csv(f"{root}/Data/general/genre_trope_matrix.csv", index=False)
     df_matrix['Trope'] = df_matrix['Trope'].str.strip()
     return df_matrix
 

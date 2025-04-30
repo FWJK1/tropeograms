@@ -99,6 +99,6 @@ def log_time(func):
 
 ## accessing stuff we want a lot
 def get_genres():
-    with open(f"{find_repo_root()}/Data/liteweight/genre_list.txt", "r") as f:
+    with open(f"{find_repo_root()}/Data/general/genre_list.txt", "r") as f:
         return f.read().splitlines() 
 
