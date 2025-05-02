@@ -20,8 +20,6 @@ if "initialized" not in st.session_state:
     ssm.initialize_state(matrix=args.matrix)
     st.session_state.initialized = True
 
-
-
 ### Actual UI Elements ###
 st.set_page_config(layout="wide")
 

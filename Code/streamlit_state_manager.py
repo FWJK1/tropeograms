@@ -17,7 +17,8 @@ root = find_repo_root()
 movies = {
     "Alien" : "Data/trope_time_series/alien_tropes.csv",
     "Clueless" : f"{root}/Data/trope_time_series/clueless_tropes.csv",
-    "Fellowship of The Ring" : f"{root}/Data/trope_time_series/Fellowship_of_the_Ring_filled.csv"
+    "Fellowship of The Ring" : f"{root}/Data/trope_time_series/Fellowship_of_the_Ring_filled.csv",
+    "10 Things I Hate About You" : f"{root}/Data/trope_time_series/10_things_i_hate.csv"
 }
 
 @log_time
@@ -53,7 +54,6 @@ def rank_genres(troperators):
 
 def calculate(tropers):
     default_y_range = get_max_range(tropers)
-    # dynamic_y_range  = get_dynamic_range(tropers)
     ranked_genres = rank_genres(tropers)
     return default_y_range, ranked_genres 
 
